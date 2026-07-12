@@ -165,7 +165,7 @@ enum _:PLAYER_DATA
     Float:PDATA_NEXT_OFFSET,
 
     PDATA_MENU_TYPE,
-    bool:PDATA_MENU_CHECK
+    bool:PDATA_MENU_TRACE
 }
 
 enum
@@ -253,7 +253,7 @@ public plugin_init()
     register_clcmd("say_team /ma",          "cmdMenu", ADMIN_RCON)
     register_clcmd("say /ambience",         "cmdMenu", ADMIN_RCON)
     register_clcmd("say_team /ambience",    "cmdMenu", ADMIN_RCON)
-    register_concmd("mm_reload",            "cmdReload", ADMIN_RCON, "-- Reloads the configuration file")
+    register_concmd("ma_reload",            "cmdReload", ADMIN_RCON, "-- Reloads the configuration file")
     register_concmd("mapambience_reload",   "cmdReload", ADMIN_RCON, "-- Reloads the configuration file")
 
     register_dictionary("MapAmbience.txt")
@@ -348,18 +348,17 @@ public eventRoundStart()
     for ( new i = 0; i < g_iAmbience; i++ )
     {
         ArrayGetArray(g_aAmbience, i, eAmbience)
+        if ( eAmbience[AMBIENCE_STATUS] != STATUS_DEFAULT )
+            continue
 
-        if ( eAmbience[AMBIENCE_STATUS] == STATUS_DEFAULT )
+        ambienceReset(eAmbience)
+        if ( eAmbience[AMBIENCE_SPAWN_CHANCE] >= random_float(0.0, 1.0) )
         {
-            ambienceReset(eAmbience)
-            if ( eAmbience[AMBIENCE_SPAWN_CHANCE] >= random_float(0.0, 1.0) )
-            {
-                eAmbience[AMBIENCE_FLAGS] |= FLAG_ACTIVE
-                eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime() + random_float(eAmbience[AMBIENCE_SOUND_DELAY][0], eAmbience[AMBIENCE_SOUND_DELAY][1])
-            }
-
-            ArraySetArray(g_aAmbience, i, eAmbience)
+            eAmbience[AMBIENCE_FLAGS] |= FLAG_ACTIVE
+            eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime() + random_float(eAmbience[AMBIENCE_SOUND_DELAY][0], eAmbience[AMBIENCE_SOUND_DELAY][1])
         }
+
+        ArraySetArray(g_aAmbience, i, eAmbience)
     }
 
     return PLUGIN_HANDLED
@@ -805,7 +804,7 @@ public menuHandlerStatus(id, menu, item)
 {
     new eAmbience[AMBIENCE]
     ArrayGetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
-    if ( !g_ePlayerData[id][PDATA_MENU_CHECK] )
+    if ( !g_ePlayerData[id][PDATA_MENU_TRACE] )
     {
         eAmbience[AMBIENCE_FLAGS] &= ~FLAG_SELECT
         ArraySetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
@@ -917,7 +916,7 @@ public menuHandlerStatus(id, menu, item)
         }
         case MENU_EXIT:
         {
-            if ( !g_ePlayerData[id][PDATA_MENU_CHECK] )
+            if ( !g_ePlayerData[id][PDATA_MENU_TRACE] )
             {
                 ambienceSound(id, SOUND_MENU_NAV)
                 ambienceMenu(id, MENU_ROOT)
@@ -926,7 +925,7 @@ public menuHandlerStatus(id, menu, item)
                 g_ePlayerData[id][PDATA_AMBIENCE_MENU] = 0
             }
 
-            g_ePlayerData[id][PDATA_MENU_CHECK] = false
+            g_ePlayerData[id][PDATA_MENU_TRACE] = false
         }
         default:
         {
@@ -963,7 +962,7 @@ public menuHandlerRemove(id, menu, item)
     new eAmbience[AMBIENCE]
 
     ArrayGetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
-    if ( !g_ePlayerData[id][PDATA_MENU_CHECK] )
+    if ( !g_ePlayerData[id][PDATA_MENU_TRACE] )
     {
         eAmbience[AMBIENCE_FLAGS] &= ~FLAG_SELECT
         ArraySetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
@@ -1026,7 +1025,7 @@ public menuHandlerRemove(id, menu, item)
         }
         case MENU_EXIT:
         {
-            if ( !g_ePlayerData[id][PDATA_MENU_CHECK] )
+            if ( !g_ePlayerData[id][PDATA_MENU_TRACE] )
             {
                 ambienceSound(id, SOUND_MENU_NAV)
                 ambienceMenu(id, MENU_ROOT)
@@ -1035,7 +1034,7 @@ public menuHandlerRemove(id, menu, item)
                 g_ePlayerData[id][PDATA_AMBIENCE_MENU] = 0
             }
 
-            g_ePlayerData[id][PDATA_MENU_CHECK] = false
+            g_ePlayerData[id][PDATA_MENU_TRACE] = false
         }
         default:
         {
@@ -1558,7 +1557,7 @@ stock ambienceCheck(id)
         eAmbience[AMBIENCE_FLAGS] &= ~FLAG_SELECT
         ArraySetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
 
-        g_ePlayerData[id][PDATA_MENU_CHECK] = true
+        g_ePlayerData[id][PDATA_MENU_TRACE] = true
         g_ePlayerData[id][PDATA_AMBIENCE_MENU] = iBest
         ambienceMenu(id, g_ePlayerData[id][PDATA_MENU_TYPE])
     }
