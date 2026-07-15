@@ -93,13 +93,6 @@ enum
     FLAG_PLAYING            = (1 << 5)
 }
 
-enum
-{
-    STATUS_DEFAULT,
-    STATUS_FORCE_ENABLE,
-    STATUS_FORCE_DISABLE
-}
-
 enum _:MAIN_SETTINGS
 {
     SETTING_DEFAULT_MODEL[MAX_RESOURCE_PATH_LENGTH],
@@ -134,7 +127,6 @@ enum _:AMBIENCE
 {
     AMBIENCE_ID,
     AMBIENCE_ITEM,
-    AMBIENCE_STATUS,
     AMBIENCE_FLAGS,
     AMBIENCE_NAME[MAX_VALUE_LENGTH],
     AMBIENCE_MODEL[MAX_RESOURCE_PATH_LENGTH],
@@ -241,10 +233,6 @@ new Array:g_aAmbience,
     g_iAmbience, g_iAmbienceConfig,
     g_iMaxPlayers
 
-new g_szStatus[][] = {"AMBIENCE_DEFAULT", "AMBIENCE_ENABLED", "AMBIENCE_DISABLED"}
-new g_szStatusChat[][] = {"AMBIENCE_CHAT_DEFAULT", "AMBIENCE_CHAT_ENABLED", "AMBIENCE_CHAT_DISABLED"}
-new g_szStatusColor[][] = {"\d", "\y", "\r"}
-
 public plugin_init()
 {
     register_plugin("Map Ambience", PLUGIN_VERSION, "RedSMURF")
@@ -348,7 +336,7 @@ public eventRoundStart()
     for ( new i = 0; i < g_iAmbience; i++ )
     {
         ArrayGetArray(g_aAmbience, i, eAmbience)
-        if ( eAmbience[AMBIENCE_STATUS] != STATUS_DEFAULT )
+        if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE) )
             continue
 
         ambienceReset(eAmbience)
@@ -782,16 +770,13 @@ public menuStatus(id, iMenu)
     ArrayGetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
 
     formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_STATUS_CURRENT",
-    g_szStatusColor[eAmbience[AMBIENCE_STATUS]], eAmbience[AMBIENCE_NAME], id, g_szStatus[eAmbience[AMBIENCE_STATUS]])
+    eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE ? "\y" : "\r", eAmbience[AMBIENCE_NAME], id, eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE ? "AMBIENCE_ENABLED" : "AMBIENCE_DISABLED")
     menu_additem(iMenu, szItem)
 
     formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_STATUS_ALL_ENABLE")
     menu_additem(iMenu, szItem)
 
     formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_STATUS_ALL_DISABLE")
-    menu_additem(iMenu, szItem)
-
-    formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_STATUS_ALL_DEFAULT")
     menu_additem(iMenu, szItem)
 
     g_ePlayerData[id][PDATA_AMBIENCE_ACTION] = true
@@ -834,28 +819,18 @@ public menuHandlerStatus(id, menu, item)
         }
         case STATUS_CURRENT:
         {
-            if ( ++ eAmbience[AMBIENCE_STATUS] > STATUS_FORCE_DISABLE )
-                eAmbience[AMBIENCE_STATUS] = STATUS_DEFAULT
+            eAmbience[AMBIENCE_FLAGS] ^= FLAG_ACTIVE
 
-            if ( eAmbience[AMBIENCE_STATUS] == STATUS_FORCE_ENABLE
-            || eAmbience[AMBIENCE_STATUS] == STATUS_DEFAULT )
+            if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE) )
             {
-                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE ))
-                    eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime()
-
-                eAmbience[AMBIENCE_FLAGS] |= FLAG_ACTIVE
-            }
-            else if ( eAmbience[AMBIENCE_STATUS] == STATUS_FORCE_DISABLE )
-            {
-                eAmbience[AMBIENCE_FLAGS] &= ~FLAG_ACTIVE
                 eAmbience[AMBIENCE_FLAGS] &= ~FLAG_PLAYING
 
-                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() < eAmbience[AMBIENCE_NEXT_SOUND] )
+                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() > eAmbience[AMBIENCE_NEXT_SOUND] )
                     engfunc(EngFunc_EmitAmbientSound, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN], eAmbience[AMBIENCE_SOUND_CURRENT], eAmbience[AMBIENCE_SOUND_VOL], eAmbience[AMBIENCE_SOUND_ATTN], SND_STOP, eAmbience[AMBIENCE_SOUND_PITCH])
             }
 
             client_print_color(id, id, "%L %L", id, "AMBIENCE_CHAT_TAG", id, "AMBIENCE_CHAT_STATUS_CURRENT",
-            eAmbience[AMBIENCE_NAME], id, g_szStatusChat[eAmbience[AMBIENCE_STATUS]])
+            eAmbience[AMBIENCE_NAME], id, eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE ? "AMBIENCE_CHAT_ENABLED" : "AMBIENCE_CHAT_DISABLED")
             ArraySetArray(g_aAmbience, g_ePlayerData[id][PDATA_AMBIENCE_MENU], eAmbience)
 
             ambienceSound(id, SOUND_MENU_NAV)
@@ -870,7 +845,6 @@ public menuHandlerStatus(id, menu, item)
                     eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime()
 
                 eAmbience[AMBIENCE_FLAGS] |= FLAG_ACTIVE
-                eAmbience[AMBIENCE_STATUS] = STATUS_FORCE_ENABLE
                 ArraySetArray(g_aAmbience, i, eAmbience)
             }
 
@@ -885,32 +859,14 @@ public menuHandlerStatus(id, menu, item)
                 ArrayGetArray(g_aAmbience, i, eAmbience)
                 eAmbience[AMBIENCE_FLAGS] &= ~FLAG_ACTIVE
                 eAmbience[AMBIENCE_FLAGS] &= ~FLAG_PLAYING
-                eAmbience[AMBIENCE_STATUS] = STATUS_FORCE_DISABLE
 
-                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() < eAmbience[AMBIENCE_NEXT_SOUND] )
+                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() > eAmbience[AMBIENCE_NEXT_SOUND] )
                     engfunc(EngFunc_EmitAmbientSound, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN], eAmbience[AMBIENCE_SOUND_CURRENT], eAmbience[AMBIENCE_SOUND_VOL], eAmbience[AMBIENCE_SOUND_ATTN], SND_STOP, eAmbience[AMBIENCE_SOUND_PITCH])
 
                 ArraySetArray(g_aAmbience, i, eAmbience)
             }
 
             client_print_color(id, id, "%L %L", id, "AMBIENCE_CHAT_TAG", id, "AMBIENCE_CHAT_STATUS_ALL_DISABLED")
-            ambienceSound(id, SOUND_MENU_ALERT)
-            ambienceMenu(id, MENU_STATUS)
-        }
-        case STATUS_ALL_DEFAULT:
-        {
-            for ( new i = 0; i < g_iAmbience; i ++ )
-            {
-                ArrayGetArray(g_aAmbience, i, eAmbience)
-                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE ))
-                    eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime()
-
-                eAmbience[AMBIENCE_FLAGS] |= FLAG_ACTIVE
-                eAmbience[AMBIENCE_STATUS] = STATUS_DEFAULT
-                ArraySetArray(g_aAmbience, i, eAmbience)
-            }
-
-            client_print_color(id, id, "%L %L", id, "AMBIENCE_CHAT_TAG", id, "AMBIENCE_CHAT_STATUS_ALL_DEFAULT")
             ambienceSound(id, SOUND_MENU_ALERT)
             ambienceMenu(id, MENU_STATUS)
         }
@@ -998,7 +954,7 @@ public menuHandlerRemove(id, menu, item)
             client_print_color(id, id, "%L %L", id, "AMBIENCE_CHAT_TAG", id, "AMBIENCE_CHAT_REMOVE_CURRENT", eAmbience[AMBIENCE_NAME])
             g_ePlayerData[id][PDATA_AMBIENCE_MENU] = 0
 
-            if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() < eAmbience[AMBIENCE_NEXT_SOUND] )
+            if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() > eAmbience[AMBIENCE_NEXT_SOUND] )
                 engfunc(EngFunc_EmitAmbientSound, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN], eAmbience[AMBIENCE_SOUND_CURRENT], eAmbience[AMBIENCE_SOUND_VOL], eAmbience[AMBIENCE_SOUND_ATTN], SND_STOP, eAmbience[AMBIENCE_SOUND_PITCH])
 
             ambienceSound(id, g_iAmbience > 0 ? SOUND_MENU_REMOVE : SOUND_MENU_NAV)
@@ -1010,7 +966,7 @@ public menuHandlerRemove(id, menu, item)
             {
                 ArrayGetArray(g_aAmbience, 0, eAmbience)
 
-                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() < eAmbience[AMBIENCE_NEXT_SOUND] )
+                if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() > eAmbience[AMBIENCE_NEXT_SOUND] )
                     engfunc(EngFunc_EmitAmbientSound, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN], eAmbience[AMBIENCE_SOUND_CURRENT], eAmbience[AMBIENCE_SOUND_VOL], eAmbience[AMBIENCE_SOUND_ATTN], SND_STOP, eAmbience[AMBIENCE_SOUND_PITCH])
 
                 ambienceKill(eAmbience[AMBIENCE_ID])
@@ -1261,9 +1217,6 @@ public saveData(id)
         eAmbience[AMBIENCE_ANGLES][0], eAmbience[AMBIENCE_ANGLES][1], eAmbience[AMBIENCE_ANGLES][2])
         fputs(iFile, szData)
 
-        formatex(szData, charsmax(szData), "status = %d^n", eAmbience[AMBIENCE_STATUS])
-        fputs(iFile, szData)
-
         eAmbience[AMBIENCE_FLAGS] &= ~(FLAG_GHOST | FLAG_SELECT | FLAG_PLAYING)
 
         formatex(szData, charsmax(szData), "flags = %d^n", eAmbience[AMBIENCE_FLAGS])
@@ -1282,8 +1235,7 @@ public loadData()
 {
     new szFile[128], iFile,
         szData[64], szKey[32], szValue[32],
-        Float:fOrigin[3], Float:fAngles[3], iItem,
-        iStatus, iFlags, iCount = -1
+        Float:fOrigin[3], Float:fAngles[3], iItem, iFlags, iCount = -1
 
     get_mapname(szFile, charsmax(szFile))
     format(szFile, charsmax(szFile), "maps/%s_MapAmbience.ini", szFile)
@@ -1299,7 +1251,7 @@ public loadData()
         if ( szData[0] == '[' )
         {
             if ( iCount != -1 )
-                loadDataAmbience(fOrigin, fAngles, iStatus, iFlags, iItem, iCount)
+                loadDataAmbience(fOrigin, fAngles, iFlags, iItem, iCount)
 
             iCount ++
         }
@@ -1331,10 +1283,6 @@ public loadData()
                 fAngles[1] = str_to_float(szKey)
                 fAngles[2] = str_to_float(szValue)
             }
-            else if ( equal(szKey, "status") )
-            {
-                iStatus = str_to_num(szValue)
-            }
             else if ( equal(szKey, "flags") )
             {
                 iFlags = str_to_num(szValue)
@@ -1343,13 +1291,13 @@ public loadData()
     }
 
     if ( iCount != -1 )
-        loadDataAmbience(fOrigin, fAngles, iStatus, iFlags, iItem, iCount)
+        loadDataAmbience(fOrigin, fAngles, iFlags, iItem, iCount)
 
     fclose(iFile)
     return PLUGIN_HANDLED
 }
 
-stock loadDataAmbience(Float:fOrigin[3], Float:fAngles[3], iStatus, iFlags, iItem, iCount)
+stock loadDataAmbience(Float:fOrigin[3], Float:fAngles[3], iFlags, iItem, iCount)
 {
     new eAmbience[AMBIENCE]
     ambienceCreate(0, iItem)
@@ -1360,7 +1308,6 @@ stock loadDataAmbience(Float:fOrigin[3], Float:fAngles[3], iStatus, iFlags, iIte
     set_pev(eAmbience[AMBIENCE_ID], pev_origin, fOrigin)
     set_pev(eAmbience[AMBIENCE_ID], pev_angles, fAngles)
 
-    eAmbience[AMBIENCE_STATUS] = iStatus
     eAmbience[AMBIENCE_FLAGS] = iFlags
     if ( eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE )
         eAmbience[AMBIENCE_NEXT_SOUND] = get_gametime() + random_float(eAmbience[AMBIENCE_SOUND_DELAY][0], eAmbience[AMBIENCE_SOUND_DELAY][1])
@@ -1572,7 +1519,7 @@ stock ambienceSetAnim(eAmbience[AMBIENCE])
 
 stock ambienceReset(eAmbience[AMBIENCE])
 {
-    if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() < eAmbience[AMBIENCE_NEXT_SOUND] )
+    if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_DURATION) || get_gametime() > eAmbience[AMBIENCE_NEXT_SOUND] )
         engfunc(EngFunc_EmitAmbientSound, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN], eAmbience[AMBIENCE_SOUND_CURRENT], eAmbience[AMBIENCE_SOUND_VOL], eAmbience[AMBIENCE_SOUND_ATTN], SND_STOP, eAmbience[AMBIENCE_SOUND_PITCH])
 
     eAmbience[AMBIENCE_FLAGS] &= ~FLAG_ACTIVE
