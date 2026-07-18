@@ -567,11 +567,11 @@ public client_authorized(id)
 
 public client_disconnected(id)
 {
-    new iItem
+    new eAmbience[AMBIENCE], iItem
     if ( g_ePlayerData[id][PDATA_AMBIENCE_GHOST]
-    && (iItem = pev(g_ePlayerData[id][PDATA_AMBIENCE_GHOST], AMBIENCE_ARRAY_ITEM)) != -1 )
+    && (iItem = ambienceGet(eAmbience, g_ePlayerData[id][PDATA_AMBIENCE_GHOST])) != -1 )
     {
-        ambienceKill(g_ePlayerData[id][PDATA_AMBIENCE_GHOST])
+        ambienceKill(eAmbience[AMBIENCE_ID])
         ambienceRemove(iItem)
     }
 
