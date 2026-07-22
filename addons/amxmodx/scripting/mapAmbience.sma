@@ -237,10 +237,10 @@ public plugin_init()
 {
     register_plugin("Map Ambience", PLUGIN_VERSION, "RedSMURF")
 
-    register_clcmd("say /ma",               "cmdMenu", ADMIN_RCON)
-    register_clcmd("say_team /ma",          "cmdMenu", ADMIN_RCON)
-    register_clcmd("say /ambience",         "cmdMenu", ADMIN_RCON)
-    register_clcmd("say_team /ambience",    "cmdMenu", ADMIN_RCON)
+    register_clcmd("say /ma",               "cmdMenu", ADMIN_RCON, "-- Opens the Map Ambience menu.")
+    register_clcmd("say_team /ma",          "cmdMenu", ADMIN_RCON, "-- Opens the Map Ambience menu.")
+    register_clcmd("say /ambience",         "cmdMenu", ADMIN_RCON, "-- Opens the Map Ambience menu.")
+    register_clcmd("say_team /ambience",    "cmdMenu", ADMIN_RCON, "-- Opens the Map Ambience menu.")
     register_concmd("ma_reload",            "cmdReload", ADMIN_RCON, "-- Reloads the configuration file")
     register_concmd("mapambience_reload",   "cmdReload", ADMIN_RCON, "-- Reloads the configuration file")
 
@@ -308,23 +308,6 @@ public cmdReload(id, iLevel, iCmd)
     console_print(id, "The configuration file has been reloaded successfully !")
 
     return PLUGIN_HANDLED
-}
-
-public client_command(id)
-{
-    if ( !g_ePlayerData[id][PDATA_AMBIENCE_GHOST] )
-        return PLUGIN_CONTINUE
-
-    new szCmd[16]
-    read_argv(0, szCmd, charsmax(szCmd))
-
-    if ( contain(szCmd, "weapon_") != -1
-    || equal(szCmd, "invnext")
-    || equal(szCmd, "invprev")
-    || equal(szCmd, "lastinv") )
-        return PLUGIN_HANDLED
-
-    return PLUGIN_CONTINUE
 }
 
 public eventRoundStart()
