@@ -23,6 +23,7 @@ AMBIENCE_DISABLED                     = \r[DISABLED]
 AMBIENCE_MENU_TITLE                   = \dMap Ambience - Version \y%s
 AMBIENCE_MENU_TITLE_PAGE              = \yPage:\r
 AMBIENCE_ROOT_CREATE                  = Create Ambience
+AMBIENCE_ROOT_EDIT                    = Edit Hangman
 AMBIENCE_ROOT_REMOVE                  = Remove Ambience
 AMBIENCE_ROOT_STATUS                  = Status Settings
 AMBIENCE_ROOT_SAVE                    = Save data
@@ -30,13 +31,15 @@ AMBIENCE_ROOT_NOCLIP                  = Status noclip %L
 AMBIENCE_ROOT_GODMODE                 = Status godmode %L
 AMBIENCE_ROOT_ROTATE                  = Adjust rotation
 
-AMBIENCE_STATUS_CURRENT               = Status Ambience >> %s%s %L
-AMBIENCE_STATUS_ALL_ENABLE            = Enable all Ambiences
-AMBIENCE_STATUS_ALL_DISABLE           = Disable all Ambiences
+AMBIENCE_EDIT_STATUS                  = Edit Status
 
 AMBIENCE_REMOVE_CURRENT               = Remove Ambience >> \y%s
 AMBIENCE_REMOVE_ALL                   = Remove all Ambiences
 
-AMBIENCE_ROTATE_RIGHT                 = Turn right
-AMBIENCE_ROTATE_LEFT                  = Turn left
+AMBIENCE_STATUS_CURRENT               = Status Ambience >> %s%s %L
+AMBIENCE_STATUS_ALL_ENABLE            = Enable all Ambiences
+AMBIENCE_STATUS_ALL_DISABLE           = Disable all Ambiences
+
+AMBIENCE_ROTATE_UP                    = Turn Up
+AMBIENCE_ROTATE_DOWN                  = Turn Down
 AMBIENCE_ROTATE_PLACE                 = Place Ambience
