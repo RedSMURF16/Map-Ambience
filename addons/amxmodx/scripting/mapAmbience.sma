@@ -1416,7 +1416,11 @@ stock ambienceSetSize(eAmbience[AMBIENCE])
 
 stock ambienceSetState(eAmbience[AMBIENCE])
 {
-    if ( !(eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE) )
+    if ( eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE )
+    {
+        eAmbience[AMBIENCE_NEXT_SOUND] = 0.0
+    }
+    else
     {
         if ( eAmbience[AMBIENCE_FLAGS] & FLAG_PLAYING )
         {
