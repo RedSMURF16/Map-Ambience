@@ -62,7 +62,6 @@
 #define SOUND_ALERT                 "buttons/bell1.wav"
 
 new const PLUGIN_VERSION[]          = "1.0"
-new const Float:DELAY_ON_CONNECT    = 1.0
 new const Float:DELAY_ON_LOAD       = 3.0
 new const ERROR_FILE[]              = "MapAmbience_ERRORS.log"
 
@@ -235,8 +234,7 @@ new Array:g_aAmbience,
     g_ePlayerData[MAX_PLAYERS + 1][PLAYER_DATA],
     bool:g_bFileWasRead, g_iActivePlayers,
     g_iAmbience, g_iAmbienceConfig,
-    HamHook:g_iFwdPreThink, HamHook:g_iFwdKilled,
-    g_iMaxPlayers
+    HamHook:g_iFwdPreThink, HamHook:g_iFwdKilled
 
 new const g_iColorActive[] = { 0, 255, 0 }
 new const g_iColorInactive[] = { 255, 0, 0 }
@@ -260,7 +258,6 @@ public plugin_init()
     DisableForward()
 
     ambienceInit()
-    g_iMaxPlayers = get_maxplayers()
 }
 
 public plugin_precache()
@@ -323,10 +320,6 @@ ReadFile()
 {
     if ( g_bFileWasRead )
     {
-        for ( new id = 1; id <= g_iMaxPlayers; id ++ )
-            if ( is_user_connected(id))
-                UpdateData(id)
-
         ArrayClear(g_eSettings[SETTING_DEFAULT_SOUND])
         ArrayClear(g_aAmbienceConfig)
         g_iAmbienceConfig = 0
@@ -488,11 +481,6 @@ ReadFile()
     fclose(iFile)
 }
 
-public client_authorized(id)
-{
-    set_task(DELAY_ON_CONNECT, "UpdateData", id)
-}
-
 public client_disconnected(id)
 {
     new eAmbience[AMBIENCE], iItem
@@ -506,11 +494,6 @@ public client_disconnected(id)
     DisableAction(id)
     g_ePlayerData[id][PDATA_AMBIENCE_GHOST]  = 0
     g_ePlayerData[id][PDATA_AMBIENCE_MENU]   = 0
-}
-
-public UpdateData(id)
-{
-    g_ePlayerData[id][PDATA_OFFSET] = g_eSettings[SETTING_OFFSET_BASE]
 }
 
 public ambienceInit()
