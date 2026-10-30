@@ -51,6 +51,14 @@
 #endif
 
 #define MAX_ENT                     32
+
+#define AMBIENCE_CHECK              10.0
+#define AMBIENCE_OFFSET_BASE        120.0
+#define AMBIENCE_OFFSET_MIN         65.0
+#define AMBIENCE_OFFSET_MAX         900.0
+#define AMBIENCE_OFFSET_STEP        10.0
+#define AMBIENCE_GHOST_ALPHA        120
+#define AMBIENCE_ROTATION_STEP      22.5
 #define ADMIN_ACCESS                ADMIN_RCON
 #define PDATA_NEXT_ATTACK           83
 #define XO_CBASEPLAYER              5
@@ -77,11 +85,13 @@ enum
     DTYPE_INT,
     DTYPE_FLOAT,
     DTYPE_FLAGS,
-    DTYPE_ARRAY_STRING,
-    DTYPE_ARRAY_SOUND,
     DTYPE_STRING_MODEL,
     DTYPE_STRING_SOUND,
-    DTYPE_STRING_MODEL_ID
+    DTYPE_ARRAY_MESSAGE,
+    DTYPE_ARRAY_MODEL,
+    DTYPE_ARRAY_SOUND,
+    DTYPE_STRING_MODEL_ID,
+    DTYPE_ARRAY_MODEL_ID
 }
 
 enum
@@ -116,13 +126,7 @@ enum _:MAIN_SETTINGS
     SETTING_DEFAULT_SOUND_PITCH,
 
     bool:SETTING_AMBIENCE_LOAD,
-    Float:SETTING_AMBIENCE_CHECK,
     Float:SETTING_AMBIENCE_TASK,
-    Float:SETTING_OFFSET_BASE,
-    Float:SETTING_OFFSET[2],
-    Float:SETTING_OFFSET_STEP,
-    SETTING_GHOST_ALPHA,
-    Float:SETTING_ROTATION_STEP[2],
 }
 
 enum _:AMBIENCE
@@ -429,20 +433,8 @@ ReadFile()
                             parseSetting(DTYPE_INT, szValue, charsmax(szValue), g_eSettings[SETTING_DEFAULT_SOUND_PITCH], charsmax(g_eSettings[SETTING_DEFAULT_SOUND_PITCH]))
                         else if ( equali(szKey, "SETTING_AMBIENCE_LOAD") )
                             parseSetting(DTYPE_INT, szValue, charsmax(szValue), g_eSettings[SETTING_AMBIENCE_LOAD], charsmax(g_eSettings[SETTING_AMBIENCE_LOAD]))
-                        else if ( equali(szKey, "SETTING_OFFSET_BASE") )
-                            parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_OFFSET_BASE], charsmax(g_eSettings[SETTING_OFFSET_BASE]))
-                        else if ( equali(szKey, "SETTING_AMBIENCE_CHECK") )
-                            parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_AMBIENCE_CHECK], charsmax(g_eSettings[SETTING_AMBIENCE_CHECK]))
                         else if ( equali(szKey, "SETTING_AMBIENCE_TASK") )
                             parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_AMBIENCE_TASK], charsmax(g_eSettings[SETTING_AMBIENCE_TASK]))
-                        else if ( equali(szKey, "SETTING_OFFSET") )
-                            parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_OFFSET], charsmax(g_eSettings[SETTING_OFFSET]))
-                        else if ( equali(szKey, "SETTING_OFFSET_STEP") )
-                            parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_OFFSET_STEP], charsmax(g_eSettings[SETTING_OFFSET_STEP]))
-                        else if ( equali(szKey, "SETTING_GHOST_ALPHA") )
-                            parseSetting(DTYPE_INT, szValue, charsmax(szValue), g_eSettings[SETTING_GHOST_ALPHA], charsmax(g_eSettings[SETTING_GHOST_ALPHA]))
-                        else if ( equali(szKey, "SETTING_ROTATION_STEP") )
-                            parseSetting(DTYPE_FLOAT, szValue, charsmax(szValue), g_eSettings[SETTING_ROTATION_STEP], charsmax(g_eSettings[SETTING_ROTATION_STEP]))
                     }
                     case SECTION_AMBIENCE:
                     {
@@ -968,7 +960,7 @@ public menuHandlerRotate(id, menu, item)
         case ROTATE_UP:
         {
             pev(eAmbience[AMBIENCE_ID], pev_angles, eAmbience[AMBIENCE_ANGLES])
-            eAmbience[AMBIENCE_ANGLES][1] -= g_eSettings[SETTING_ROTATION_STEP]
+            eAmbience[AMBIENCE_ANGLES][1] -= AMBIENCE_ROTATION_STEP
             if ( eAmbience[AMBIENCE_ANGLES][1] < -180.0 ) eAmbience[AMBIENCE_ANGLES][1] += 360.0
 
             set_pev(eAmbience[AMBIENCE_ID], pev_angles, eAmbience[AMBIENCE_ANGLES])
@@ -980,7 +972,7 @@ public menuHandlerRotate(id, menu, item)
         case ROTATE_DOWN:
         {
             pev(eAmbience[AMBIENCE_ID], pev_angles, eAmbience[AMBIENCE_ANGLES])
-            eAmbience[AMBIENCE_ANGLES][1] += g_eSettings[SETTING_ROTATION_STEP]
+            eAmbience[AMBIENCE_ANGLES][1] += AMBIENCE_ROTATION_STEP
             if ( eAmbience[AMBIENCE_ANGLES][1] > 180.0 ) eAmbience[AMBIENCE_ANGLES][1] -= 360.0
 
             set_pev(eAmbience[AMBIENCE_ID], pev_angles, eAmbience[AMBIENCE_ANGLES])
@@ -1072,7 +1064,7 @@ stock ambienceCreate(id, iItem)
     {
         EnableAction(id)
         g_ePlayerData[id][PDATA_AMBIENCE_GHOST] = eAmbience[AMBIENCE_ID]
-        g_ePlayerData[id][PDATA_OFFSET] = g_eSettings[SETTING_OFFSET_BASE]
+        g_ePlayerData[id][PDATA_OFFSET] = AMBIENCE_OFFSET_BASE
 
         eAmbience[AMBIENCE_FLAGS] |= FLAG_GHOST
     }
@@ -1273,14 +1265,14 @@ public fwdPreThink(id)
         {
             if ( iButton & IN_ATTACK )
             {
-                g_ePlayerData[id][PDATA_OFFSET]      += g_eSettings[SETTING_OFFSET_STEP]
-                g_ePlayerData[id][PDATA_OFFSET]      = floatclamp(g_ePlayerData[id][PDATA_OFFSET], g_eSettings[SETTING_OFFSET][0], g_eSettings[SETTING_OFFSET][1])
+                g_ePlayerData[id][PDATA_OFFSET]      += AMBIENCE_OFFSET_STEP
+                g_ePlayerData[id][PDATA_OFFSET]      = floatclamp(g_ePlayerData[id][PDATA_OFFSET], AMBIENCE_OFFSET_MIN, AMBIENCE_OFFSET_MAX)
                 g_ePlayerData[id][PDATA_NEXT_OFFSET] = fCurrentTime + 0.1
             }
             else if ( iButton & IN_ATTACK2 )
             {
-                g_ePlayerData[id][PDATA_OFFSET]      -= g_eSettings[SETTING_OFFSET_STEP]
-                g_ePlayerData[id][PDATA_OFFSET]      = floatclamp(g_ePlayerData[id][PDATA_OFFSET], g_eSettings[SETTING_OFFSET][0], g_eSettings[SETTING_OFFSET][1])
+                g_ePlayerData[id][PDATA_OFFSET]      -= AMBIENCE_OFFSET_STEP
+                g_ePlayerData[id][PDATA_OFFSET]      = floatclamp(g_ePlayerData[id][PDATA_OFFSET], AMBIENCE_OFFSET_MIN, AMBIENCE_OFFSET_MAX)
                 g_ePlayerData[id][PDATA_NEXT_OFFSET] = fCurrentTime + 0.1
             }
         }
@@ -1348,7 +1340,7 @@ stock ambienceCheck(id)
     global_get(glb_v_forward, fVec2)
 
     iBest = -1
-    fBestDist = g_eSettings[SETTING_AMBIENCE_CHECK]
+    fBestDist = AMBIENCE_CHECK
     for ( new i = 0; i < g_iAmbience; i ++ )
     {
         ArrayGetArray(g_aAmbience, i, eAmbience)
@@ -1425,7 +1417,7 @@ stock ambienceSelect(eAmbience[AMBIENCE], iAction)
     }
     else if ( iAction == TARGET_GHOST )
     {
-        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, g_eSettings[SETTING_GHOST_ALPHA])
+        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, AMBIENCE_GHOST_ALPHA)
     }
     else if ( iAction == TARGET_HIDE )
     {
@@ -1527,17 +1519,6 @@ stock parseSetting(iType, szValue[], iValueLen, any:aOutput[], iOutputLength)
         {
             aOutput[0] = read_flags(szValue)
         }
-        case DTYPE_ARRAY_STRING:
-        {
-            replace_all(szValue, iValueLen, "^"", " ")
-            replace_all(szValue, iValueLen, "^^n", "^n")
-            ArrayPushString(aOutput[0], szValue)
-        }
-        case DTYPE_ARRAY_SOUND:
-        {
-            ArrayPushString(aOutput[0], szValue)
-            if ( !g_bFileWasRead ) precache_sound(szValue)
-        }
         case DTYPE_STRING_MODEL:
         {
             copy(aOutput, iOutputLength, szValue)
@@ -1548,10 +1529,33 @@ stock parseSetting(iType, szValue[], iValueLen, any:aOutput[], iOutputLength)
             copy(aOutput, iOutputLength, szValue)
             if ( !g_bFileWasRead ) precache_sound(szValue)
         }
+        case DTYPE_ARRAY_MESSAGE:
+        {
+            replace_all(szValue, iValueLen, "^"", " ")
+            replace_all(szValue, iValueLen, "^^n", "^n")
+            ArrayPushString(aOutput[0], szValue)
+        }
+        case DTYPE_ARRAY_MODEL:
+        {
+            if ( !g_bFileWasRead )
+                precache_model(szValue)
+
+            ArrayPushString(aOutput[0], szValue)
+        }
+        case DTYPE_ARRAY_SOUND:
+        {
+            ArrayPushString(aOutput[0], szValue)
+            if ( !g_bFileWasRead ) precache_sound(szValue)
+        }
         case DTYPE_STRING_MODEL_ID:
         {
             if ( !g_bFileWasRead )
                 aOutput[0] = precache_model(szValue)
+        }
+        case DTYPE_ARRAY_MODEL_ID:
+        {
+            if ( !g_bFileWasRead )
+                ArrayPushCell(aOutput[0], precache_model(szValue))
         }
     }
 }
@@ -1609,5 +1613,10 @@ stock LogConfigError(const iLine, const szText[], any:...)
 
     log_to_file(ERROR_FILE, "^nLine %d: %s", iLine, szError)
 }
+
+
+
+
+
 
 
