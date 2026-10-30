@@ -24,9 +24,7 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <cstrike>
-#include <engine>
 #include <fakemeta>
-#include <fun>
 #include <hamsandwich>
 #include <xs>
 
@@ -239,9 +237,6 @@ new Array:g_aAmbience,
     bool:g_bFileWasRead, g_iActivePlayers,
     g_iAmbience, g_iAmbienceConfig,
     HamHook:g_iFwdPreThink, HamHook:g_iFwdKilled
-
-new const g_iColorActive[] = { 0, 255, 0 }
-new const g_iColorInactive[] = { 255, 0, 0 }
 
 public plugin_init()
 {
@@ -563,10 +558,10 @@ public menuRoot(id, iMenu)
 
     menu_addblank2(iMenu)
 
-    formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_ROOT_NOCLIP", id, get_user_noclip(id) ? "AMBIENCE_ON" : "AMBIENCE_OFF")
+    formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_ROOT_NOCLIP", id, (pev(id, pev_movetype) == MOVETYPE_NOCLIP) ? "AMBIENCE_ON" : "AMBIENCE_OFF")
     menu_additem(iMenu, szItem)
 
-    formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_ROOT_GODMODE", id, get_user_godmode(id) ? "AMBIENCE_ON" : "AMBIENCE_OFF")
+    formatex(szItem, charsmax(szItem), "%L", id, "AMBIENCE_ROOT_GODMODE", id, (pev(id, pev_takedamage) == DAMAGE_NO) ? "AMBIENCE_ON" : "AMBIENCE_OFF")
     menu_additem(iMenu, szItem)
 }
 
@@ -1225,7 +1220,7 @@ stock loadDataAmbience(Float:fOrigin[3], Float:fAngles[3], iFlags, iItem, iCount
 
 public ambienceNoClip(id)
 {
-    set_user_noclip(id, !get_user_noclip(id))
+    set_pev(id, pev_movetype, pev(id, pev_movetype) == MOVETYPE_NOCLIP ? MOVETYPE_WALK : MOVETYPE_NOCLIP)
 
     ambienceSound(id, SOUND_MENU_NAV)
     ambienceMenu(id, MENU_ROOT)
@@ -1233,7 +1228,7 @@ public ambienceNoClip(id)
 
 public ambienceGodMode(id)
 {
-    set_user_godmode(id, !get_user_godmode(id))
+    set_pev(id, pev_takedamage, pev(id, pev_takedamage) == DAMAGE_NO ? DAMAGE_AIM : DAMAGE_NO)
 
     ambienceSound(id, SOUND_MENU_NAV)
     ambienceMenu(id, MENU_ROOT)
@@ -1352,7 +1347,7 @@ stock ambienceCheck(id)
 
         xs_vec_mul_scalar(fVec2, fDot, fVec3)
         xs_vec_add(fVec3, fVec1, fVec3)
-        fDist = get_distance_f(fVec3, eAmbience[AMBIENCE_ORIGIN])
+        fDist = vector_distance(fVec3, eAmbience[AMBIENCE_ORIGIN])
         if ( fDist < fBestDist )
         {
             fBestDist = fDist
@@ -1410,22 +1405,22 @@ stock ambienceSelect(eAmbience[AMBIENCE], iAction)
     new iRenderColor[3]
     if ( iAction == TARGET_SELECT )
     {
-        if ( eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE )  { iRenderColor[0] = g_iColorActive[0];    iRenderColor[1] = g_iColorActive[1];    iRenderColor[2] = g_iColorActive[2]; }
-        else                                            { iRenderColor[0] = g_iColorInactive[0];  iRenderColor[1] = g_iColorInactive[1];  iRenderColor[2] = g_iColorInactive[2]; }
+        if ( eAmbience[AMBIENCE_FLAGS] & FLAG_ACTIVE )  { iRenderColor[0] = 0;    iRenderColor[1] = 255;    iRenderColor[2] = 0; }
+        else                                            { iRenderColor[0] = 255;  iRenderColor[1] = 0;  iRenderColor[2] = 0; }
 
-        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxGlowShell, iRenderColor[0], iRenderColor[1], iRenderColor[2], kRenderTransAlpha, 16)
+        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxGlowShell, iRenderColor[0], iRenderColor[1], iRenderColor[2], kRenderTransAlpha, 16)
     }
     else if ( iAction == TARGET_GHOST )
     {
-        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, AMBIENCE_GHOST_ALPHA)
+        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, AMBIENCE_GHOST_ALPHA)
     }
     else if ( iAction == TARGET_HIDE )
     {
-        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, 0)
+        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, 0)
     }
     else if ( iAction == TARGET_CLEAR )
     {
-        set_ent_rendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderNormal, 255)
+        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderNormal, 255)
     }
 }
 
@@ -1613,10 +1608,15 @@ stock LogConfigError(const iLine, const szText[], any:...)
 
     log_to_file(ERROR_FILE, "^nLine %d: %s", iLine, szError)
 }
+stock entitySetRendering(iEntity, iRenderFx, iRed, iGreen, iBlue, iRenderMode, iRenderAmt)
+{
+    new Float:fRenderColor[3]
+    fRenderColor[0] = float(iRed)
+    fRenderColor[1] = float(iGreen)
+    fRenderColor[2] = float(iBlue)
 
-
-
-
-
-
-
+    set_pev(iEntity, pev_renderfx, iRenderFx)
+    set_pev(iEntity, pev_rendercolor, fRenderColor)
+    set_pev(iEntity, pev_rendermode, iRenderMode)
+    set_pev(iEntity, pev_renderamt, float(iRenderAmt))
+}
