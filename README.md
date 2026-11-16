@@ -13,7 +13,10 @@ Custom setups are saved per map and automatically loaded on every map start.
 - Configurable per emitter: spawn chance, sound duration, delay before playing, volume, attenuation and pitch
 - Optional model attachment per emitter with a flag-controlled duration mode
 - Ghost preview tracking for natural placement against grounds and walls
-- [color=red]Requires AMX Mod X 1.9.0+[/color]
+
+## 📋 Requirements
+- ReGameDLL
+- AMX Mod X 1.10+
 
 ## 💬 Commands
 - `say /ma` - Opens the Map Ambience menu.
