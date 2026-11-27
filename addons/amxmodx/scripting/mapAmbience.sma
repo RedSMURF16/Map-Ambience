@@ -1376,7 +1376,7 @@ stock ambienceSetSeq(iEnt)
 
 stock ambienceSetSize(eAmbience[AMBIENCE])
 {
-    // ambienceSelect(eAmbience, TARGET_HIDE)
+    ambienceSelect(eAmbience, TARGET_HIDE)
     engfunc(EngFunc_SetOrigin, eAmbience[AMBIENCE_ID], eAmbience[AMBIENCE_ORIGIN])
     set_pev(eAmbience[AMBIENCE_ID], pev_angles, eAmbience[AMBIENCE_ANGLES])
     set_pev(eAmbience[AMBIENCE_ID], pev_solid, SOLID_NOT)
@@ -1415,7 +1415,7 @@ stock ambienceSelect(eAmbience[AMBIENCE], iAction)
     }
     else if ( iAction == TARGET_HIDE )
     {
-        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, 255)
+        entitySetRendering(eAmbience[AMBIENCE_ID], kRenderFxNone, 255, 255, 255, kRenderTransAlpha, 0)
     }
     else if ( iAction == TARGET_CLEAR )
     {
