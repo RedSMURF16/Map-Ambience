@@ -1,7 +1,7 @@
 <h1 align="center">Map Ambience</h1>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=u3LJnpc9kiE"><img src="https://img.youtube.com/vi/u3LJnpc9kiE/maxresdefault.jpg" alt="Watch on YouTube" width="600"></a>
+  <img src="images/demo.gif" alt="Map Ambience">
 </p>
 
 ## 📝 Description
